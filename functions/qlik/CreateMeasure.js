@@ -14,6 +14,10 @@ const functionConfig = {
       {
         name: 'def',
         dataType: q.sse.DataType.STRING,
+      },
+      {
+        name: 'labelDef',
+        dataType: q.sse.DataType.STRING,
       }
     ],
 }
@@ -23,11 +27,12 @@ const functionConfig = {
  * @function CreateMeasure
  * @param {string} name
  * @param {string} defintion
+ * @param {string} label expression
  * @returns {string} status - "Created" or "Replaced" plus any validation error messages.
  * @example
- * CreateMeasure(nameField, defField)
+ * CreateMeasure(nameField, defField, labelExprField)
  * @example
- * CreateMeasure('Total Sales', 'Sum(Sales)')
+ * CreateMeasure('Total Sales', 'Sum(Sales)', 'Sales $(max(Year))')
  */
   const functionDefinition = async function CreateMeasure(request) {
     request.on('data', async (bundle) => {
@@ -38,7 +43,9 @@ const functionConfig = {
         for (const row of bundle.rows) {
           let name = row.duals[0].strData
           let def = row.duals[1].strData
-          result = await DoCreateMeasure({name: name,  def: def, commonHeader: common})
+          let labelDef = row.duals[2].strData
+
+          result = await DoCreateMeasure({name: name,  def: def, labelDef:labelDef, commonHeader: common})
           rows.push({
             duals: [{ strData: result}]
           })
@@ -54,7 +61,7 @@ const functionConfig = {
   });
 }
 
-const DoCreateMeasure = async function DoCreateMeasure({name, def, commonHeader}) {
+const DoCreateMeasure = async function DoCreateMeasure({name, def, labelDef, commonHeader}) {
   let retVal = 'False'
   const measureDef = {
     qInfo: {
@@ -62,7 +69,8 @@ const DoCreateMeasure = async function DoCreateMeasure({name, def, commonHeader}
     },
     qMeasure: {
         qLabel: `${name}`,
-        qDef: `${def}`,  
+        qDef: `${def}`,
+        qLabelExpression:`${labelDef}`,
     },
     qMetaDef: {
         title: `${name}`,
@@ -71,7 +79,7 @@ const DoCreateMeasure = async function DoCreateMeasure({name, def, commonHeader}
     }
   }
 
-  let isDesktop = commonHeader.userId == 'Personal\\Me'  
+  let isDesktop = commonHeader.userId == 'Personal\\Me'
   let session = null
   try {
     session = sessionMgr.getSession(commonHeader);
@@ -86,8 +94,10 @@ const DoCreateMeasure = async function DoCreateMeasure({name, def, commonHeader}
       measure = await doc.getMeasure(measureId)
       let prop = await measure.getProperties()
       prop.qMeasure.qDef = def
-      await measure.setProperties(prop) 
-      retVal = 'Replaced';   
+      prop.qMeasure.qLabelExpression = labelDef
+      console.log(labelDef)
+      await measure.setProperties(prop)
+      retVal = 'Replaced';
     }
     // Persist the measure
     docprop = await doc.getAppProperties()
@@ -97,7 +107,7 @@ const DoCreateMeasure = async function DoCreateMeasure({name, def, commonHeader}
     }
     if (isDesktop)         {
       await doc.doSave()
-    }  
+    }
     // Syntax check the measure and record result
     let checkValue = await doc.checkExpression(def)
     if (checkValue.qErrorMsg) {
