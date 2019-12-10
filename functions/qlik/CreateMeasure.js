@@ -26,7 +26,7 @@ const functionConfig = {
  * Create a Measure in the calling app.
  * @function CreateMeasure
  * @param {string} name
- * @param {string} defintion
+ * @param {string} definition
  * @param {string} label expression
  * @returns {string} status - "Created" or "Replaced" plus any validation error messages.
  * @example
