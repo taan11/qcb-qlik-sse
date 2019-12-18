@@ -3,7 +3,7 @@ const sessionMgr = require('../../lib/Qlik/QlikSession');
 const helper = require('../../lib/Qlik/QlikHelper');
 
 const functionConfig = {
-    name: 'CreateMeasureFromProperties',
+    name: 'CreateDimensionFromProperties',
     functionType: q.sse.FunctionType.SCALAR,
     returnType: q.sse.DataType.STRING,
     params: [
@@ -15,30 +15,14 @@ const functionConfig = {
 }
 
 /**
- * Create a Measure in the calling app.
- * @function CreateMeasureFromProperties
- * @param {string} props - MeasureProps in JSON format
+ * Create a dimension in the calling app.
+ * @function CreatedimensionFromProperties
+ * @param {string} props - dimensionProps in JSON format
  * @returns {string} status - "Created" or "Replaced" plus any validation error messages.
  * @example
- * CreateMeasureFromProperties(measureDefField)
- * { qInfo:
-   { qId: '98fd6d69-af8d-4e05-9d4b-c8e868ec6993',
-     qType: 'measure' },
-  qMeasure:
-   { qLabel: 'Visual Index Discounted Private Selected Mode',
-     qDef:
-      'round(100*$(visualPrice(\'\',[Vehicle Discounted Price Private]))/$(benchmarkVisualPrice(\'\',[Vehicle Discounted Price Private],$(benchmarkMode))))',
-     qGrouping: 'N',
-     qExpressions: [],
-     qActiveExpression: 0,
-     qLabelExpression:
-      '\'Visual Index Discounted Private vs \'&$(=benchmarkMode.Label)' },
-  qMetaDef:
-   { title: 'Visual Index Discounted Private Selected Mode',
-     description: '',
-     tags: [] } }
+ * CreatedimensionFromProperties(dimensionDefField)
  */
-  const functionDefinition = async function CreateMeasureFromProperties(request) {
+  const functionDefinition = async function CreateDimensionFromProperties(request) {
     request.on('data', async (bundle) => {
       try {
         const common = q.sse.CommonRequestHeader.decode(request.metadata.get('qlik-commonrequestheader-bin')[0]);
@@ -46,7 +30,7 @@ const functionConfig = {
         let result = 0
         for (const row of bundle.rows) {
           let props = row.duals[0].strData
-          result = await DoCreateMeasure({props: props, commonHeader: common})
+          result = await DoCreateDimension({props: props, commonHeader: common})
           rows.push({
             duals: [{ strData: result}]
           })
@@ -62,7 +46,7 @@ const functionConfig = {
   });
 }
 
-const DoCreateMeasure = async function DoCreateMeasure({props, commonHeader}) {
+const DoCreateDimension = async function DoCreateDimension({props, commonHeader}) {
   let retVal = 'False'
   const obj = JSON.parse(props)
 
@@ -70,32 +54,32 @@ const DoCreateMeasure = async function DoCreateMeasure({props, commonHeader}) {
   let session = null
   try {
     session = sessionMgr.getSession(commonHeader);
-    let measure
+    let dimension
     global = await session.open()
     doc = await global.openDoc(commonHeader.appId)
-    let measureId = await helper.findMeasureByTitle(doc, obj.qMetaDef.title)
-    if (!measureId) {   // Measure does not exist
-      measure = await doc.createMeasure(obj)
+    let dimensionId = await helper.findDimensionByTitle(doc, obj.qMetaDef.title)
+    if (!dimensionId) {   // dimension does not exist
+      dimension = await doc.createDimension(obj)
       retVal = 'Created';
-    } else {  // Measure exists, update the properties with the input
-      measure = await doc.getMeasure(measureId)
-      let prop = await measure.getProperties()  // Current properties 
+    } else {  // dimension exists, update the properties with the input
+      dimension = await doc.getDimension(dimensionId)
+      let prop = await dimension.getProperties()  // Current properties 
       prop = Object.assign(prop, obj) // Update with new properties
-      prop.qInfo.qId = measureId  // Restore the qId
-      await measure.setProperties(prop) 
+      prop.qInfo.qId = dimensionId  // Restore the qId
+      await dimension.setProperties(prop) 
       retVal = 'Replaced';   
     }
-    // Persist the measure
+    // Persist the dimension
     docprop = await doc.getAppProperties()
     if (docprop.published) {
-        await measure.publish()
-        await measure.approve()
+        await dimension.publish()
+        await dimension.approve()
     }
     if (isDesktop)         {
       await doc.doSave()
     }  
-    // Syntax check the measure and record result
-    let def = obj.qMeasure.qDef
+    // Syntax check the dimension and record result
+    let def = obj.qDimension.qDef
     let checkValue = await doc.checkExpression(def)
     if (checkValue.qErrorMsg) {
       retVal += '; ' + checkValue.qErrorMsg

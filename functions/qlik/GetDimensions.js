@@ -3,7 +3,7 @@ const sessionMgr = require('../../lib/Qlik/QlikSession');
 const helper = require('../../lib/Qlik/QlikHelper');
 
 const functionConfig = {
-    name: 'GetMeasures',
+    name: 'GetDimensions',
     functionType: q.sse.FunctionType.TENSOR,
     returnType: q.sse.DataType.STRING,
     params: [
@@ -16,14 +16,14 @@ const functionConfig = {
 const tableDescription = q.sse.TableDescription.encode(
   {
     fields: [  
-      {name: 'MeasureProps', dataType: q.sse.DataType.STRING},  
+      {name: 'DimensionProps', dataType: q.sse.DataType.STRING},  
     ]
   }).buffer
 
 /**
- * Load Measures as JSON from an app.
+ * Load Dimensions as JSON from an app.
  * <br>Current SSE specification requires AppId to be specified as a Field.
- * @function GetMeasures
+ * @function GetDimensions
  * @param {tabledescription} Tablename{AppId}
  * @returns {string} json Measure(s)
  * @example
@@ -34,7 +34,7 @@ const tableDescription = q.sse.TableDescription.encode(
  * LoadedMeasures:
  * Load * Extension QCB.GetMeasures(TempId{AppId});
  */
-  const functionDefinition = async function LoadMeasures(request) {
+  const functionDefinition = async function LoadDimensions(request) {
     request.on('data', async (bundle) => {
       try {
         const common = q.sse.CommonRequestHeader.decode(request.metadata.get('qlik-commonrequestheader-bin')[0]);
@@ -42,15 +42,13 @@ const tableDescription = q.sse.TableDescription.encode(
         let result = 0
         for (const row of bundle.rows) {
           let appId = row.duals[0].strData
-          let measures  = await getMeasures({appId: appId,  commonHeader: common})
-          measures.forEach((measure) =>{
-            //console.log(JSON.stringify(measure))
+          let dimensions  = await getDimensions({appId: appId,  commonHeader: common})
+          dimensions.forEach((dimension) =>{
+            //console.log(JSON.stringify(dimension))
             rows.push({
-              duals: [{ strData: JSON.stringify(measure)}]
+              duals: [{ strData: JSON.stringify(dimension)}]
             })
-            console.log("Misure: ",measure)
           })
-         
         }
         request.metadata.add('qlik-tabledescription-bin', tableDescription)
         request.sendMetadata(request.metadata)
@@ -65,16 +63,16 @@ const tableDescription = q.sse.TableDescription.encode(
   });
 }
 
-const getMeasures = async function getMeasures({appId, commonHeader}) { 
+const getDimensions = async function getDimensions({appId, commonHeader}) { 
   let session = null
-  let measures = []
+  let dimensions = []
   try {
     session = sessionMgr.getSession(commonHeader);
     global = await session.open()
     doc = await global.openDoc(appId)
-    measures = await helper.getMeasures(doc)
+    dimensions = await helper.getDimensions(doc)
   } catch (err) {
-    measures.push('Error: ' + err.toString())
+    dimensions.push('Error: ' + err.toString())
     console.log(err)
   }
   finally {
@@ -82,7 +80,7 @@ const getMeasures = async function getMeasures({appId, commonHeader}) {
       session = await sessionMgr.closeSession(session)
     }
   }
-  return measures
+  return dimensions
 }
 
 module.exports = {
