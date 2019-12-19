@@ -95,7 +95,7 @@ const DoCreateMeasure = async function DoCreateMeasure({name, def, labelDef, com
       let prop = await measure.getProperties()
       prop.qMeasure.qDef = def
       prop.qMeasure.qLabelExpression = labelDef
-      console.log(labelDef)
+      //console.log(labelDef)
       await measure.setProperties(prop)
       retVal = 'Replaced';
     }

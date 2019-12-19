@@ -15,8 +15,8 @@ const functionConfig = {
 }
 const tableDescription = q.sse.TableDescription.encode(
   {
-    fields: [  
-      {name: 'MeasureProps', dataType: q.sse.DataType.STRING},  
+    fields: [
+      {name: 'MeasureProps', dataType: q.sse.DataType.STRING},
     ]
   }).buffer
 
@@ -30,7 +30,7 @@ const tableDescription = q.sse.TableDescription.encode(
  * TempId:
  * LOAD '\Documents\Qlik\Sense\Apps\Sales Discovery.qvf' as AppId
  * AutoGenerate 1;
- * 
+ *
  * LoadedMeasures:
  * Load * Extension QCB.GetMeasures(TempId{AppId});
  */
@@ -48,9 +48,9 @@ const tableDescription = q.sse.TableDescription.encode(
             rows.push({
               duals: [{ strData: JSON.stringify(measure)}]
             })
-            console.log("Misure: ",measure)
+            //console.log("Misure: ",measure)
           })
-         
+
         }
         request.metadata.add('qlik-tabledescription-bin', tableDescription)
         request.sendMetadata(request.metadata)
@@ -65,7 +65,7 @@ const tableDescription = q.sse.TableDescription.encode(
   });
 }
 
-const getMeasures = async function getMeasures({appId, commonHeader}) { 
+const getMeasures = async function getMeasures({appId, commonHeader}) {
   let session = null
   let measures = []
   try {
