@@ -43,7 +43,7 @@ const functionConfig = {
           rows.push({
             duals: [{ strData: result}]
           })
-          console.log("result", result)
+          //console.log("result", result)
         }
         request.write({
           rows
@@ -75,7 +75,7 @@ const DoCreateDimension = async function DoCreateDimension({name, def, commonHea
       title: `${name}`
     }
   }
-  
+
   let isDesktop = commonHeader.userId == 'Personal\\Me'
   let session = null
   try {
