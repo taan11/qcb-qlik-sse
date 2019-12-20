@@ -61,21 +61,8 @@ const DoDeleteMeasure = async function DoDeleteMeasure({name, commonHeader}) {
     measureId = await helper.findMeasureByTitle(doc, name)
     //console.log(name)
     if(measureId){
-    const deleteMeasure = async (doc, measureId) => {
-      try {
-        //console.log(measureId)
-        const deleted = await doc.destroyMeasure(measureId)
-        //console.log(deleted)
-        return deleted===true?'Measure Deleted':'False'
-      } catch(err){
-        retVal = 'Error: ' + err.toString()
-        console.log(err)
-        return 'false'
-      }
-    }
-      retVal = await deleteMeasure(doc, measureId);
+      retVal = await helper.deleteMeasure(doc, measureId);
     } else {
-      //console.log('Measure not found')
       retVal = 'Measure not found'
     }
     //Persist deletion in QS Desktop

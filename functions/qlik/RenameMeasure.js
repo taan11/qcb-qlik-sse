@@ -66,21 +66,7 @@ const DoRenameMeasure = async function DoRenameMeasure({currentName, newName, co
     doc = await global.openDoc(commonHeader.appId)
     measureId = await helper.findMeasureByTitle(doc, currentName)
     if(measureId){
-    const renameMeasure = async (doc, measureId, newName) => {
-      try {
-        const measure = await doc.getMeasure(measureId)
-          let prop = await measure.getProperties()
-          prop.qMeasure.qLabel = newName
-          prop.qMetaDef.title = newName
-          const done = await measure.setProperties(prop)
-          return done==='{}'?'Renamed':'Found Not renamed';
-      } catch(err){
-        retVal = 'Error: ' + err.toString()
-        console.log('error renaming measure',err)
-        return 'false'
-      }
-    }
-      retVal = await renameMeasure(doc, measureId, newName);
+          retVal = await helper.renameMeasure(doc, measureId, newName);
     } else {
       //console.log('Measure not found')
       retVal = 'Measure not found'
